@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Induktansi Bersama — Transfer Daya Nirkabel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --moss-deep:#122A1E;
+    --moss-panel:#1C3B29;
+    --moss-panel-2:#234631;
+    --bark:#5B3A29;
+    --bark-light:#7A5236;
+    --lichen:#8FBF7F;
+    --lichen-dim:#5C8F60;
+    --gold:#E8B355;
+    --gold-soft:#F4D897;
+    --parchment:#F3ECDA;
+    --mist:#BFD0BB;
+    --shadow:rgba(6,16,10,0.45);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1100px 700px at 12% -10%, #1E4530 0%, transparent 60%),
+      radial-gradient(900px 600px at 110% 10%, #16351F 0%, transparent 55%),
+      linear-gradient(180deg, var(--moss-deep), #0E2117 90%);
+    color:var(--parchment);
+    font-family:'Work Sans', sans-serif;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  .decor-vine{
+    position:fixed; pointer-events:none; opacity:0.14; z-index:0;
+  }
+  .decor-vine.tl{top:-40px; left:-60px; width:340px;}
+  .decor-vine.br{bottom:-60px; right:-80px; width:420px; transform:rotate(20deg);}
+
+  header.hero{
+    position:relative; z-index:1;
+    max-width:920px; margin:0 auto; padding:64px 24px 24px;
+    text-align:center;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    letter-spacing:0.14em; text-transform:uppercase;
+    font-size:12px; color:var(--gold-soft);
+    margin:0 0 14px;
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:clamp(30px, 5vw, 52px);
+    line-height:1.08;
+    margin:0 0 18px;
+    color:var(--parchment);
+  }
+  h1 em{
+    font-style:italic; font-weight:500; color:var(--gold);
+  }
+  .lede{
+    font-size:16px; line-height:1.6; color:var(--mist);
+    max-width:620px; margin:0 auto;
+  }
+
+  main.stage{
+    position:relative; z-index:1;
+    max-width:1040px; margin:40px auto 0; padding:0 20px;
+  }
+
+  .canvas-card{
+    background:linear-gradient(160deg, var(--moss-panel), var(--moss-panel-2));
+    border-radius:28px;
+    padding:20px 20px 8px;
+    box-shadow:0 30px 60px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.05);
+    border:1px solid rgba(143,191,127,0.18);
+    position:relative;
+  }
+  .canvas-card::after{
+    content:"";
+    position:absolute; inset:0;
+    border-radius:28px;
+    background:
+      radial-gradient(240px 140px at 10% 0%, rgba(232,179,85,0.06), transparent 60%),
+      radial-gradient(240px 140px at 95% 100%, rgba(143,191,127,0.08), transparent 60%);
+    pointer-events:none;
+  }
+  #circuit{
+    width:100%; height:auto; display:block; border-radius:18px;
+    background:radial-gradient(600px 300px at 50% 30%, rgba(255,255,255,0.02), transparent 70%);
+  }
+
+  .readout-row{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(130px,1fr));
+    gap:10px;
+    margin:16px 0 20px;
+  }
+  .readout{
+    background:rgba(0,0,0,0.18);
+    border:1px solid rgba(143,191,127,0.16);
+    border-radius:14px;
+    padding:12px 14px;
+  }
+  .readout .rlabel{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px; letter-spacing:0.06em; text-transform:uppercase;
+    color:var(--mist); opacity:0.85; margin-bottom:4px;
+  }
+  .readout .rvalue{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:19px; color:var(--gold-soft);
+    font-weight:500;
+  }
+  .readout.led-state .rvalue{ color:var(--gold); }
+
+  section.controls{
+    position:relative; z-index:1;
+    max-width:1040px; margin:28px auto 0; padding:0 20px 60px;
+  }
+  .panel-wood{
+    background:
+      repeating-linear-gradient(100deg, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 2px, transparent 2px, transparent 26px),
+      linear-gradient(150deg, var(--bark-light), var(--bark) 70%);
+    border-radius:24px;
+    padding:26px 26px 30px;
+    box-shadow:0 24px 50px var(--shadow);
+    border:1px solid rgba(0,0,0,0.25);
+  }
+  .panel-title{
+    font-family:'Fraunces', serif; font-style:italic; font-weight:500;
+    font-size:20px; margin:0 0 20px; color:var(--parchment);
+  }
+  .control-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(220px,1fr));
+    gap:22px 28px;
+  }
+  .control{
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .control-head{
+    display:flex; justify-content:space-between; align-items:baseline;
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px;
+  }
+  .control-head .cname{ color:var(--parchment); letter-spacing:0.02em;}
+  .control-head .cval{ color:var(--gold-soft); }
+  .hint{
+    font-size:11px; color:var(--mist); opacity:0.75; margin-top:-2px;
+    font-family:'Work Sans', sans-serif;
+  }
+  .hint.resonance{
+    color:var(--gold); opacity:0; transition:opacity .3s ease;
+    font-family:'IBM Plex Mono', monospace; font-size:11px;
+  }
+  .hint.resonance.show{ opacity:1; }
+
+  input[type=range]{
+    -webkit-appearance:none; appearance:none;
+    width:100%; height:6px; border-radius:6px;
+    background:linear-gradient(90deg, #3B2417, #6B4423 40%, var(--lichen-dim) 100%);
+    outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none;
+    width:20px; height:20px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, var(--gold-soft), var(--gold) 55%, #a97a2c 100%);
+    border:2px solid #3B2417;
+    cursor:pointer;
+    box-shadow:0 2px 6px rgba(0,0,0,0.4);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:18px; height:18px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, var(--gold-soft), var(--gold) 55%, #a97a2c 100%);
+    border:2px solid #3B2417; cursor:pointer;
+  }
+
+  footer.note{
+    max-width:1040px; margin:0 auto 60px; padding:0 24px;
+    font-size:12.5px; color:var(--mist); opacity:0.7; text-align:center;
+    line-height:1.6;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    * { animation-duration: 0.001ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<svg class="decor-vine tl" viewBox="0 0 200 300" fill="none"><path d="M10 0 C 40 60, 0 100, 30 150 C 60 200, 10 240, 40 300" stroke="#8FBF7F" stroke-width="3"/><circle cx="30" cy="150" r="8" fill="#8FBF7F"/><circle cx="40" cy="60" r="5" fill="#8FBF7F"/></svg>
+<svg class="decor-vine br" viewBox="0 0 200 300" fill="none"><path d="M190 300 C 160 240, 200 200, 170 150 C 140 100, 190 60, 160 0" stroke="#E8B355" stroke-width="3"/><circle cx="170" cy="150" r="8" fill="#E8B355"/><circle cx="160" cy="240" r="5" fill="#E8B355"/></svg>
+
+<header class="hero">
+  <p class="eyebrow">Simulasi Interaktif</p>
+  <h1>Induktansi Bersama &amp; Transfer Daya Nirkabel</h1>
+  <p class="lede">Simulasi rangkaian Tx/Rx dengan transistor, resistor, dan LED sebagai indikator arus induksi. Atur jarak lilitan, frekuensi pensaklaran, tegangan, dan resistansi untuk melihat pengaruhnya terhadap efisiensi transfer daya.</p>
+</header>
+
+<main class="stage">
+  <div class="canvas-card">
+    <canvas id="circuit" width="1000" height="440"></canvas>
+    <div class="readout-row">
+      <div class="readout"><div class="rlabel">Kopling (k)</div><div class="rvalue" id="rK">0.00</div></div>
+      <div class="readout"><div class="rlabel">Lilitan (N)</div><div class="rvalue" id="rN">0</div></div>
+      <div class="readout"><div class="rlabel">Arus TX</div><div class="rvalue" id="rI">0.00 A</div></div>
+      <div class="readout"><div class="rlabel">Efisiensi</div><div class="rvalue" id="rEff">0 %</div></div>
+      <div class="readout led-state"><div class="rlabel">Status LED</div><div class="rvalue" id="rLed">Mati</div></div>
+    </div>
+  </div>
+</main>
+
+<section class="controls">
+  <div class="panel-wood">
+    <p class="panel-title">Panel Kendali</p>
+    <div class="control-grid">
+      <div class="control">
+        <div class="control-head"><span class="cname">Jarak lilitan</span><span class="cval" id="vDist">4.0 cm</span></div>
+        <input type="range" id="dist" min="1" max="15" step="0.5" value="4">
+        <span class="hint">Menentukan celah visual antara Tx dan Rx pada diagram.</span>
+      </div>
+      <div class="control">
+        <div class="control-head"><span class="cname">Jumlah lilitan (N)</span><span class="cval" id="vTurns">12</span></div>
+        <input type="range" id="turns" min="5" max="30" step="1" value="12">
+        <span class="hint">Menambah N meningkatkan induktansi dan penguatan sinyal induksi.</span>
+      </div>
+      <div class="control">
+        <div class="control-head"><span class="cname">Koefisien kopling (k)</span><span class="cval" id="vK">0.50</span></div>
+        <input type="range" id="kcoef" min="0.05" max="0.95" step="0.01" value="0.50">
+        <span class="hint">Menyatakan seberapa besar fluks Tx yang tertangkap Rx (0–1).</span>
+      </div>
+      <div class="control">
+        <div class="control-head"><span class="cname">Frekuensi transistor</span><span class="cval" id="vFreq">130 kHz</span></div>
+        <input type="range" id="freq" min="20" max="300" step="1" value="130">
+        <span class="hint resonance" id="resonanceHint">Titik resonansi — efisiensi maksimum</span>
+      </div>
+      <div class="control">
+        <div class="control-head"><span class="cname">Tegangan sumber</span><span class="cval" id="vVolt">9.0 V</span></div>
+        <input type="range" id="volt" min="3" max="12" step="0.5" value="9">
+        <span class="hint">Mendorong arus lewat resistor menuju lilitan primer.</span>
+      </div>
+      <div class="control">
+        <div class="control-head"><span class="cname">Resistansi seri</span><span class="cval" id="vRes">15 Ω</span></div>
+        <input type="range" id="res" min="5" max="100" step="1" value="15">
+        <span class="hint">Membatasi arus — pelindung transistor dan lilitan.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="note">
+  Model ini disederhanakan untuk tujuan edukasi: koefisien kopling (k) dan jumlah lilitan (N) diatur langsung, efisiensi memuncak di sekitar frekuensi resonansi ~130 kHz, dan kecerahan LED merepresentasikan daya relatif yang berhasil diinduksi ke sisi penerima (Rx). Jarak hanya memengaruhi tampilan celah pada diagram.
+</footer>
+
+<script>
+(function(){
+  const canvas = document.getElementById('circuit');
+  const ctx = canvas.getContext('2d');
+  const DPR = Math.min(window.devicePixelRatio || 1, 2);
+  const CSS_W = 1000, CSS_H = 440;
+  canvas.width = CSS_W * DPR;
+  canvas.height = CSS_H * DPR;
+  ctx.scale(DPR, DPR);
+
+  const els = {
+    dist: document.getElementById('dist'),
+    freq: document.getElementById('freq'),
+    volt: document.getElementById('volt'),
+    res: document.getElementById('res'),
+    turns: document.getElementById('turns'),
+    kcoef: document.getElementById('kcoef'),
+    vDist: document.getElementById('vDist'),
+    vFreq: document.getElementById('vFreq'),
+    vVolt: document.getElementById('vVolt'),
+    vRes: document.getElementById('vRes'),
+    vTurns: document.getElementById('vTurns'),
+    vK: document.getElementById('vK'),
+    rK: document.getElementById('rK'),
+    rN: document.getElementById('rN'),
+    rI: document.getElementById('rI'),
+    rEff: document.getElementById('rEff'),
+    rLed: document.getElementById('rLed'),
+    resonanceHint: document.getElementById('resonanceHint'),
+  };
+
+  let state = { d:4, f:130, v:9, r:15, n:12, k:0.5 };
+
+  function readInputs(){
+    state.d = parseFloat(els.dist.value);
+    state.f = parseFloat(els.freq.value);
+    state.v = parseFloat(els.volt.value);
+    state.r = parseFloat(els.res.value);
+    state.n = parseFloat(els.turns.value);
+    state.k = parseFloat(els.kcoef.value);
+    els.vDist.textContent = state.d.toFixed(1) + ' cm';
+    els.vFreq.textContent = state.f.toFixed(0) + ' kHz';
+    els.vVolt.textContent = state.v.toFixed(1) + ' V';
+    els.vRes.textContent = state.r.toFixed(0) + ' \u03A9';
+    els.vTurns.textContent = state.n.toFixed(0);
+    els.vK.textContent = state.k.toFixed(2);
+  }
+  [els.dist, els.freq, els.volt, els.res, els.turns, els.kcoef].forEach(i => i.addEventListener('input', readInputs));
+  readInputs();
+
+  function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
+
+  function computePhysics(){
+    const k = state.k;
+    const freqFactor = Math.exp(-Math.pow((state.f-130)/60,2));
+    const turnsFactor = clamp(state.n/15, 0.4, 2.2);
+    const I_tx = state.v/state.r;
+    const eff = clamp(k*k*freqFactor*turnsFactor, 0, 0.95);
+    const I_ref = 0.8;
+    const brightness = clamp(eff * (I_tx/I_ref), 0, 1);
+    return {k, freqFactor, turnsFactor, I_tx, eff, brightness};
+  }
+
+  // ---------- layout ----------
+  const txX = 250, rxXBase = 560, coilY = 140, coilR = 58;
+  function gapPx(d){ return clamp((d-1)/14, 0, 1) * 300; }
+
+  function loopPoints(cx, cy, r){
+    return {
+      left:  {x:cx-78, y:cy},
+      lb:    {x:cx-78, y:cy+150},
+      rb:    {x:cx+78, y:cy+150},
+      right: {x:cx+78, y:cy},
+    };
+  }
+
+  // ---------- drawing helpers ----------
+  function drawCoil(cx, cy, r, phase, glowT, turnsN){
+    // concentric spiral-like turns, count derived from N
+    const loops = clamp(Math.round(turnsN/6), 2, 7);
+    ctx.save();
+    for(let i=0;i<loops;i++){
+      const rr = r - i*(9 - loops*0.3);
+      ctx.beginPath();
+      ctx.arc(cx, cy, rr, 0.35+i*0.05, Math.PI*2-0.35-i*0.05);
+      ctx.strokeStyle = `rgba(143,191,127,${0.55+glowT*0.35})`;
+      ctx.lineWidth = 3.4;
+      ctx.lineCap='round';
+      ctx.stroke();
+    }
+    // little leaf ticks
+    for(let i=0;i<6;i++){
+      const a = (i/6)*Math.PI*2 + phase;
+      const lx = cx + Math.cos(a)*(r+10);
+      const ly = cy + Math.sin(a)*(r+10);
+      ctx.save();
+      ctx.translate(lx,ly);
+      ctx.rotate(a);
+      ctx.beginPath();
+      ctx.ellipse(0,0,6,3,0,0,Math.PI*2);
+      ctx.fillStyle = 'rgba(143,191,127,0.5)';
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  function drawWirePath(pts, dashOffset, current){
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(pts.left.x, pts.left.y);
+    ctx.lineTo(pts.lb.x, pts.lb.y);
+    ctx.lineTo(pts.rb.x, pts.rb.y);
+    ctx.lineTo(pts.right.x, pts.right.y);
+    ctx.strokeStyle = 'rgba(191,208,187,0.35)';
+    ctx.lineWidth = 3;
+    ctx.lineJoin='round';
+    ctx.stroke();
+
+    // flowing current dashes
+    const alpha = clamp(current, 0.08, 1);
+    ctx.setLineDash([10,14]);
+    ctx.lineDashOffset = -dashOffset;
+    ctx.strokeStyle = `rgba(232,179,85,${alpha})`;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  function drawBattery(cx,cy,label){
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.strokeStyle = '#F3ECDA';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(0,-16); ctx.lineTo(0,16); ctx.stroke();
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(-14,-16); ctx.lineTo(14,-16); ctx.stroke();
+    ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(-9,16); ctx.lineTo(9,16); ctx.stroke();
+    ctx.fillStyle = '#BFD0BB';
+    ctx.font = '11px "IBM Plex Mono", monospace';
+    ctx.textAlign='center';
+    ctx.fillText(label, 0, 36);
+    ctx.restore();
+  }
+
+  function drawTransistor(cx,cy,on,label){
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.beginPath();
+    ctx.arc(0,0,17,0,Math.PI*2);
+    ctx.fillStyle = on ? 'rgba(232,179,85,0.28)' : 'rgba(0,0,0,0.2)';
+    ctx.strokeStyle = on ? '#E8B355' : '#8FBF7F';
+    ctx.lineWidth = 2;
+    ctx.fill(); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-6,-9); ctx.lineTo(-6,9);
+    ctx.moveTo(-6,-4); ctx.lineTo(9,-11);
+    ctx.moveTo(-6,4); ctx.lineTo(9,11);
+    ctx.strokeStyle = '#F3ECDA'; ctx.lineWidth = 1.6;
+    ctx.stroke();
+    ctx.fillStyle = '#BFD0BB';
+    ctx.font = '11px "IBM Plex Mono", monospace';
+    ctx.textAlign='center';
+    ctx.fillText(label, 0, 34);
+    ctx.restore();
+  }
+
+  function drawResistor(cx,cy,label){
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.beginPath();
+    ctx.moveTo(-22,0);
+    const seg = [ -22,-16,-10,-4,2,8,14,20 ];
+    let y = 0;
+    for(let i=0;i<seg.length-1;i++){
+      const yy = (i%2===0) ? -8 : 8;
+      ctx.lineTo(seg[i], yy);
+    }
+    ctx.lineTo(22,0);
+    ctx.strokeStyle = '#7A5236';
+    ctx.lineWidth = 3;
+    ctx.lineJoin='round';
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(243,236,218,0.5)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = '#BFD0BB';
+    ctx.font = '11px "IBM Plex Mono", monospace';
+    ctx.textAlign='center';
+    ctx.fillText(label, 0, 26);
+    ctx.restore();
+  }
+
+  function drawLedBud(cx,cy,brightness){
+    ctx.save();
+    ctx.translate(cx,cy);
+    // outer glow
+    if(brightness>0.02){
+      const g = ctx.createRadialGradient(0,0,0,0,0,40*brightness+14);
+      g.addColorStop(0, `rgba(244,216,151,${0.55*brightness})`);
+      g.addColorStop(1, 'rgba(244,216,151,0)');
+      ctx.beginPath();
+      ctx.arc(0,0,40*brightness+14,0,Math.PI*2);
+      ctx.fillStyle = g;
+      ctx.fill();
+    }
+    // petals bloom with brightness
+    const petals = 5;
+    for(let i=0;i<petals;i++){
+      const a = (i/petals)*Math.PI*2;
+      const len = 8 + brightness*10;
+      ctx.save();
+      ctx.rotate(a);
+      ctx.beginPath();
+      ctx.ellipse(0,-12-len/2,4.5,len/2,0,0,Math.PI*2);
+      ctx.fillStyle = `rgba(143,191,127,${0.4+brightness*0.3})`;
+      ctx.fill();
+      ctx.restore();
+    }
+    // bulb
+    ctx.beginPath();
+    ctx.arc(0,0,10,0,Math.PI*2);
+    ctx.fillStyle = brightness>0.03
+      ? `rgba(232,179,85,${0.5+brightness*0.5})`
+      : 'rgba(60,50,30,0.6)';
+    ctx.strokeStyle = '#F3ECDA';
+    ctx.lineWidth = 1.4;
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#BFD0BB';
+    ctx.font = '11px "IBM Plex Mono", monospace';
+    ctx.textAlign='center';
+    ctx.fillText('LED', 0, 34);
+    ctx.restore();
+  }
+
+  function drawFieldArcs(txCx, rxCx, cy, r, k, brightness, t){
+    const n = 4;
+    for(let i=0;i<n;i++){
+      const spread = (i-(n-1)/2) * 14;
+      const midY = cy - r - 26 - i*10 + spread*0.2;
+      ctx.beginPath();
+      ctx.moveTo(txCx, cy - r + 6);
+      ctx.quadraticCurveTo((txCx+rxCx)/2, midY, rxCx, cy - r + 6);
+      const alpha = clamp(k*0.9, 0.04, 0.85) * (0.5+0.5*Math.sin(t*2 + i));
+      ctx.strokeStyle = `rgba(143,191,127,${alpha})`;
+      ctx.lineWidth = 1.6;
+      ctx.setLineDash([6,10]);
+      ctx.lineDashOffset = -t*40 - i*6;
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+  }
+
+  // particles: pollen / fireflies drifting from tx to rx
+  let particles = [];
+  function spawnParticle(txCx, rxCx, cy, r){
+    particles.push({
+      t:0,
+      dur: 1.4 + Math.random()*0.8,
+      txCx, rxCx, cy, r,
+      arc: -(30+Math.random()*40),
+      size: 1.6+Math.random()*1.8,
+    });
+  }
+  function updateParticles(dt, brightness, txCx, rxCx, cy, r){
+    if(brightness>0.04){
+      const spawnChance = brightness*0.9;
+      if(Math.random() < spawnChance) spawnParticle(txCx, rxCx, cy, r);
+    }
+    particles.forEach(p=> p.t += dt/p.dur);
+    particles = particles.filter(p=>p.t<1);
+  }
+  function drawParticles(){
+    particles.forEach(p=>{
+      const tt = p.t;
+      const x = p.txCx + (p.rxCx-p.txCx)*tt;
+      const y = p.cy - p.r + 6 + Math.sin(tt*Math.PI)*p.arc;
+      const alpha = Math.sin(tt*Math.PI);
+      ctx.beginPath();
+      ctx.arc(x,y,p.size,0,Math.PI*2);
+      ctx.fillStyle = `rgba(244,216,151,${alpha})`;
+      ctx.shadowColor = 'rgba(232,179,85,0.8)';
+      ctx.shadowBlur = 8;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+  }
+
+  let t0 = performance.now();
+  let dashAcc = 0;
+
+  function frame(now){
+    const dt = Math.min((now-t0)/1000, 0.05);
+    t0 = now;
+
+    const phys = computePhysics();
+    const gap = gapPx(state.d);
+    const rxX = rxXBase + gap;
+
+    // visual rates derived from physical values, capped for readability
+    const blinkHz = clamp(state.f/40, 1, 8);
+    const on = Math.sin(now/1000 * blinkHz * Math.PI*2) > 0;
+    dashAcc += dt * (20 + phys.I_tx*60);
+
+    // update readouts (throttled naturally by rAF)
+    els.rK.textContent = phys.k.toFixed(2);
+    els.rN.textContent = state.n.toFixed(0);
+    els.rI.textContent = phys.I_tx.toFixed(2) + ' A';
+    els.rEff.textContent = Math.round(phys.eff*100) + ' %';
+    els.rLed.textContent = phys.brightness>0.66 ? 'Terang'
+      : phys.brightness>0.28 ? 'Sedang'
+      : phys.brightness>0.04 ? 'Redup'
+      : 'Mati';
+    if(phys.freqFactor>0.9){ els.resonanceHint.classList.add('show'); }
+    else{ els.resonanceHint.classList.remove('show'); }
+
+    updateParticles(dt, phys.brightness, txX, rxX, coilY, coilR);
+
+    // ---- draw ----
+    ctx.clearRect(0,0,CSS_W,CSS_H);
+
+    drawFieldArcs(txX, rxX, coilY, coilR, phys.k, phys.brightness, now/1000);
+    drawParticles();
+
+    const txPts = loopPoints(txX, coilY, coilR);
+    const rxPts = loopPoints(rxX, coilY, coilR);
+
+    drawWirePath(txPts, dashAcc, phys.I_tx * (on?1:0.15));
+    drawWirePath(rxPts, dashAcc*0.8, phys.brightness);
+
+    drawCoil(txX, coilY, coilR, now/2000, phys.I_tx/1.5, state.n);
+    drawCoil(rxX, coilY, coilR, -now/2000, phys.brightness, state.n);
+
+    const txMidY = txPts.lb.y;
+    drawBattery(txPts.left.x + 26, txMidY, state.v.toFixed(1)+'V');
+    drawTransistor((txPts.left.x+txPts.right.x)/2, txMidY, on, 'Q1');
+    drawResistor(txPts.right.x - 26, txMidY, state.r.toFixed(0)+'\u03A9');
+
+    const rxMidY = rxPts.lb.y;
+    drawResistor(rxPts.left.x + 26, rxMidY, '15\u03A9');
+    drawLedBud((rxPts.left.x+rxPts.right.x)/2 + 14, rxMidY, phys.brightness);
+
+    // coil labels
+    ctx.fillStyle = '#F3ECDA';
+    ctx.font = '13px "Fraunces", serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Tx — pemancar', txX, coilY - coilR - 14);
+    ctx.fillText('Rx — penerima', rxX, coilY - coilR - 14);
+
+    ctx.font = '11px "IBM Plex Mono", monospace';
+    ctx.fillStyle = '#8FBF7F';
+    ctx.fillText(state.d.toFixed(1)+' cm', (txX+rxX)/2, coilY - coilR - 34);
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
